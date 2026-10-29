@@ -3,4 +3,4 @@
 
 # SD JSON Claims
 
-Privacy-preserving selective disclosure of JSON claims using [Salted Merkle tree](https://github.com/filip26/salted-merkle-tree).
+Privacy-preserving selective disclosure of JSON claims using [Salted Merkle Tree](https://github.com/filip26/salted-merkle-tree).
