@@ -12,6 +12,8 @@ Privacy-preserving selective disclosure of JSON claims using [Salted Merkle Tree
 The issuer generates a Merkle root from all JSON claims.
 
 ```js
+import { extractJSONClaims } from "sd-json-claims";
+
 const { claims } = extractJSONClaims({
   name: "Filip",
   city: "Prague",
@@ -28,6 +30,8 @@ The issuer signs the root using asynchronous cryptography, then shares the signa
 The disclosing party selects claims to disclose and generates the corresponding disclosure data.
 
 ```js
+import { extractJSONClaims } from "sd-json-claims";
+
 const { disclosed: disclosedDocument, claims, indices } = extractJSONClaims(
   data,
   new Set([
@@ -44,6 +48,8 @@ const disclosure = smt.generatePath(hmacKey, claims, indices);
 The verifier reconstructs the Merkle root from the disclosed claims and associated disclosure data.
 
 ```js
+import { extractJSONClaims } from "sd-json-claims";
+
 const { claims } = extractJSONClaims(disclosedDocument);
 const { salts, indices, path } = disclosure;
 
@@ -60,7 +66,7 @@ Initialize `SaltedMerkleTree` with SHA-256 hashing and HMAC-SHA-256. Choose the 
 
 ```js
 import { createHash, createHmac } from "node:crypto";
-import { SaltedMerkleTree } from "salted-merkle-tree";
+import { SaltedMerkleTree } from "sd-json-claims";
 
 const smt = new SaltedMerkleTree({
   hash: (chunks) => {
@@ -83,7 +89,7 @@ const smt = new SaltedMerkleTree({
 #### Web Crypto API
 
 ```js
-import { SaltedMerkleTree } from "salted-merkle-tree";
+import { SaltedMerkleTree } from "sd-json-claims";
 
 const encoder = new TextEncoder();
 
