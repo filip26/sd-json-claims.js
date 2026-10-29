@@ -43,6 +43,27 @@ const { disclosed: disclosedDocument, claims, indices } = extractJSONClaims(
 const disclosure = smt.generatePath(hmacKey, claims, indices);
 ```
 
+The disclosed document and its associated disclosure data:
+
+```json
+{
+  "city": "Prague",
+  "country": "Czech Republic"
+}
+```
+```javascript
+{
+  salts: [
+    ...
+  ],
+  path: [
+    ...
+  ],
+  indices: [0, 2],
+  signature: Sig(root)
+}
+```
+
 ### Verifier
 
 The verifier reconstructs the Merkle root from the disclosed claims and associated disclosure data.
