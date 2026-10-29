@@ -1,0 +1,50 @@
+{
+  "name": "sd-json-claims",
+  "version": "1.0.0",
+  "description": "Privacy-preserving selective disclosure of JSON claims using salted Merkle trees",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "selective-disclosure",
+    "json-claims",
+    "json",
+    "merkle-tree",
+    "data-integrity",
+    "privacy",
+    "hash-tree",
+    "cryptography",
+    "data-authenticity"
+  ],
+  "author": {
+    "name": "Filip Kolařík",
+    "email": "filip26@gmail.com",
+    "url": "https://github.com/filip26"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/filip26/sd-json-claims.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filip26/sd-json-claims.js"
+  },
+  "bugs": {
+    "url": "https://github.com/filip26/sd-json-claims.js/issues"
+  },
+  "devDependencies": {
+    "eslint": "^10.13.0",
+    "eslint-plugin-jsdoc": "^65.4.2"
+  },
+  "dependencies": {
+    "canonicalize": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
