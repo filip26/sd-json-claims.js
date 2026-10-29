@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert";
 import { createHash, createHmac } from "crypto";
-import { SaltedMerkleTree, extractClaims } from "../src/index.js";
+import { SaltedMerkleTree, extractJSONClaims } from "../src/index.js";
 
 test("Salted Merkle Tree with injected crypto primitives", () => {
 
@@ -28,7 +28,7 @@ test("Salted Merkle Tree with injected crypto primitives", () => {
 
     const hmacKey = Buffer.from("00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF", "hex");
 
-    const { claims: allClaims } = extractClaims({
+    const { claims: allClaims } = extractJSONClaims({
         name: "Filip",
         city: "Prague",
         country: "Czech Republic"
@@ -40,7 +40,7 @@ test("Salted Merkle Tree with injected crypto primitives", () => {
 
     console.log("root", root.toString("hex"))
 
-    const { claims: disclosedClaims, disclosed, indices: disclosedIndices } = extractClaims(
+    const { claims: disclosedClaims, disclosed, indices: disclosedIndices } = extractJSONClaims(
         {
             name: "Filip",
             city: "Prague",
@@ -49,8 +49,8 @@ test("Salted Merkle Tree with injected crypto primitives", () => {
         new Set(["/country", "/city"]));
 
     const disclosure = smt.generatePath(hmacKey, disclosedClaims, disclosedIndices);
-    
-    const { claims } = extractClaims(disclosed);
+
+    const { claims } = extractJSONClaims(disclosed);
 
     const reconstructedRoot = smt.recreateRoot(
         claims, 

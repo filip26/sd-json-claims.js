@@ -9,7 +9,7 @@ import canonicalize from "canonicalize";
  * @param {Array<string>|Set<string>} [pointers] - The set of JSON pointers to designate as selected.
  * @returns {Object} An object containing the extracted claims, optional selected indices, and the target document.
  */
-export function extractClaims(document, pointers = null) {
+export function extractJSONClaims(document, pointers = null) {
     var data = typeof document === "string" ? JSON.parse(document) : document;
     const claims = [];
     const indices = [];
