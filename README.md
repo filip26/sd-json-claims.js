@@ -23,7 +23,7 @@ const root = smt.generateRoot(hmacKey, claims);
 
 The issuer signs the root using asynchronous cryptography, then shares the signature and HMAC key with the holder.
 
-### 2. Holder (Disclosing Party)
+### Holder (Disclosing Party)
 
 The disclosing party selects claims to disclose and generates the corresponding disclosure data.
 
