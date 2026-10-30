@@ -104,6 +104,7 @@ const smt = new SaltedMerkleTree({
     }
     return h.digest();
   },
+  maxDepth: 8,  // default, 2^8 leaves, max 256 claims
 });
 ```
 
@@ -123,6 +124,7 @@ const smt = new SaltedMerkleTree({
       await crypto.subtle.sign("HMAC", key, concatBytes(chunks))
     );
   },
+  maxDepth: 8,  // default, 2^8 leaves, max 256 claims
 });
 
 const hmacSecretKey = await crypto.subtle.importKey(

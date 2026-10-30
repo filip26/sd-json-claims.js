@@ -42,7 +42,8 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
  *       if (chunk != null) h.update(chunk);
  *     }
  *     return h.digest();
- *   }
+ *   },
+ *   maxDepth: 8, // 2^8 leaves
  * });
  *
  * @example
