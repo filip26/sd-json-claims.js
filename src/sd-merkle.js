@@ -1,30 +1,9 @@
 
-const PREFIX_LEAF = 0x00;
-const PREFIX_NODE = 0x01;
-const PREFIX_PADDING = 0x02;
-const PREFIX_INDEX_PADDING = 0x10;
-const PREFIX_LEVEL_PADDING = 0x11;
-
-function toUint32BE(num) {
-    return new Uint8Array([
-        num >>> 24,
-        (num >>> 16) & 0xff,
-        (num >>> 8) & 0xff,
-        num & 0xff
-    ]);
-}
-
-function compareHashes(a, b) {
-    if (a.length !== b.length) {
-        throw new Error("The hash sizes are not the same.");
-    }
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) {
-            return a[i] < b[i] ? -1 : 1;
-        }
-    }
-    return 0;
-}
+const PREFIX_LEAF = new Uint8Array([0x00]);
+const PREFIX_NODE = new Uint8Array([0x01]);
+const PREFIX_PADDING = new Uint8Array([0x02]);
+const PREFIX_INDEX_PADDING = new Uint8Array([0x10]);
+const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
 
 /**
  * Provides operations for generating salted Merkle tree roots, generating
@@ -280,7 +259,7 @@ export class SaltedMerkleTree {
 
         for (let i = 0; i < totalSize; i++) {
             result[i] = this.hmac(hmacKey, [
-                new Uint8Array([PREFIX_INDEX_PADDING]),
+                PREFIX_INDEX_PADDING,
                 toUint32BE(i)
             ]);
         }
@@ -329,9 +308,9 @@ export class SaltedMerkleTree {
      * @param {Uint8Array} right 
      * @returns {Uint8Array|Promise<Uint8Array>}
      */
-    async _hashNode(left, right) {
+    _hashNode(left, right) {
         return this.hash([
-            new Uint8Array([PREFIX_NODE]),
+            PREFIX_NODE,
             left,
             right
         ]);
@@ -350,7 +329,7 @@ export class SaltedMerkleTree {
     _hashLeaf(salt, data) {
 
         const chunks = [
-            new Uint8Array([PREFIX_LEAF]),
+            PREFIX_LEAF,
             salt
         ];
 
@@ -377,13 +356,34 @@ export class SaltedMerkleTree {
      */
     async _levelPadding(hmacKey, level) {
         const padding = await this.hmac(hmacKey, [
-            new Uint8Array([PREFIX_LEVEL_PADDING]),
+            PREFIX_LEVEL_PADDING,
             toUint32BE(level)
         ]);
 
         return this.hash([
-            new Uint8Array([PREFIX_PADDING]),
+            PREFIX_PADDING,
             padding
         ]);
     }
 };
+
+function toUint32BE(num) {
+    return new Uint8Array([
+        num >>> 24,
+        (num >>> 16) & 0xff,
+        (num >>> 8) & 0xff,
+        num & 0xff
+    ]);
+}
+
+function compareHashes(a, b) {
+    if (a.length !== b.length) {
+        throw new Error("The hash sizes are not the same.");
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            return a[i] < b[i] ? -1 : 1;
+        }
+    }
+    return 0;
+}
