@@ -55,7 +55,7 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
 export class SaltedMerkleTree {
     constructor(options = {}) {
 
-        const { hash, hmac } = options;
+        const { hash, hmac, maxDepth = 8 } = options;
 
         if (typeof hash !== "function" || typeof hmac !== "function") {
             throw new Error("Both hash and hmac functions must be provided in options.");
@@ -63,6 +63,8 @@ export class SaltedMerkleTree {
 
         this.hash = hash;
         this.hmac = hmac;
+        this.maxDepth = maxDepth;
+        this.maxLeaves = 1 << maxDepth;
     }
 
     /**
@@ -132,18 +134,18 @@ export class SaltedMerkleTree {
         let buffer = new Array(claims.length);
         let levelSize = buffer.length;
 
-        for (let i = 0; i < levelSize; i++) {
-            const mappedIdx = mapping[i];
-            buffer[i] = this._hashLeaf(salts[mappedIdx], claims[mappedIdx]);
-            mapping[i] = indices[mappedIdx];
+        // initialize leaves 
+        for (let leafIndex = 0; leafIndex < levelSize; leafIndex++) {
+            const claimIndex = mapping[leafIndex];  // claim index in the disclosed dataset
+            buffer[leafIndex] = this._hashLeaf(salts[claimIndex], claims[claimIndex]);
+            mapping[leafIndex] = indices[claimIndex];   // set original leaf index
         }
 
+        let level = 0;
         let pathIndex = 0;
 
         while (levelSize > 1 || pathIndex < path.length) {
             let nextLevelSize = 0;
-            const nextBuffer = [];
-            const nextMapping = [];
 
             for (let i = 0; i < levelSize; i++) {
                 const nodeIndex = mapping[i];
@@ -164,13 +166,15 @@ export class SaltedMerkleTree {
                     right = path[pathIndex++];
                 }
 
-                nextBuffer[nextLevelSize] = this._hashNode(left, right);
-                nextMapping[nextLevelSize] = nodeIndex >>> 1;
+                buffer[nextLevelSize] = this._hashNode(left, right);
+                mapping[nextLevelSize] = nodeIndex >>> 1;
                 nextLevelSize++;
             }
 
-            buffer = nextBuffer;
-            mapping = nextMapping;
+            if (level++ >= this.maxDepth) {
+                throw new Error("max depth ...");
+            }
+
             levelSize = nextLevelSize;
         }
 

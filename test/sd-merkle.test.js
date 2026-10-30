@@ -52,14 +52,18 @@ test("Node.js crypto primitives", async () => {
 
     const { claims } = extractJSONClaims(disclosed);
 
-    const reconstructedRoot = await smt.recreateRoot(
+    const ref = await smt.recreateRoot(
         claims,
         disclosure.salts,
         disclosure.indices,
         disclosure.path);
 
-    console.log("ref", reconstructedRoot.toString("hex"))
-    assert.deepStrictEqual(reconstructedRoot, root);
+    console.log("ref", ref.toString("hex"))
+
+    assert.ok(ref instanceof Uint8Array);
+    assert.strictEqual(ref.length, 32);
+
+    assert.deepStrictEqual(ref, root);
 });
 
 test("Web Crypto primitive", async () => {
@@ -76,6 +80,7 @@ test("Web Crypto primitive", async () => {
                 await crypto.subtle.sign("HMAC", key, Buffer.concat(chunks))
             );
         },
+        maxDepth: 2,
     });
 
     const _hmacKey = crypto.subtle.importKey(
@@ -110,11 +115,15 @@ test("Web Crypto primitive", async () => {
 
     const { claims } = extractJSONClaims(disclosed);
 
-    const reconstructedRoot = await smt.recreateRoot(
+    const ref = await smt.recreateRoot(
         claims,
         disclosure.salts,
         disclosure.indices,
         disclosure.path);
 
-    assert.deepStrictEqual(reconstructedRoot, root);
+
+    assert.ok(ref instanceof Uint8Array);
+    assert.strictEqual(ref.length, 32);
+
+    assert.deepStrictEqual(ref, root);
 });
