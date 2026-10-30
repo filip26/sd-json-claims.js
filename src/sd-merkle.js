@@ -21,7 +21,7 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
  * @param {Object} options Cryptographic configuration.
  * @param {(chunks: Array<Uint8Array|null|undefined>) => Uint8Array} options.hash Hashes the supplied chunks and returns the digest.
  * @param {(key: Uint8Array, chunks: Array<Uint8Array|null|undefined>) => Uint8Array} options.hmac Computes a keyed hash over the supplied chunks and returns the digest.
- * @param {number} options.maxDepth Sets maximum allowed tree depth (default: 8, i.e. 2^8 leaves, max 256 claims).
+ * @param {number} [options.maxDepth] Sets maximum allowed tree depth (default: 8, i.e. 2^8 leaves, max 256 claims).
  * @throws {Error}
  *
  * @example
@@ -143,7 +143,7 @@ export class SaltedMerkleTree {
             mapping[leafIndex] = indices[claimIndex];   // set original leaf index
         }
 
-        let level = 0;
+        let level = 1;
         let pathIndex = 0;
 
         while (levelSize > 1 || pathIndex < path.length) {
@@ -173,7 +173,7 @@ export class SaltedMerkleTree {
                 nextLevelSize++;
             }
 
-            if (level++ >= this.maxDepth) {
+            if (level++ > this.maxDepth) {
                 throw new Error("max depth ...");
             }
 
@@ -183,6 +183,12 @@ export class SaltedMerkleTree {
         return buffer[0];
     }
 
+    /**
+     * 
+     * @param {*} hmacKey 
+     * @param {Uint8Array[]|Promise<Uint8Array>[]} buffer 
+     * @returns {Promise<Uint8Array}
+     */
     async _generateRoot(hmacKey, buffer) {
         const depth = 32 - Math.clz32(buffer.length - 1);
 
@@ -208,9 +214,16 @@ export class SaltedMerkleTree {
         return buffer[0];
     }
 
+    /**
+     * 
+     * @param {*} hmacKey 
+     * @param {Uint8Array[]|Promise<Uint8Array>[]} buffer 
+     * @returns {Promise<Uint8Array[]>}
+     */
     async _generatePath(hmacKey, buffer) {
         const path = [];
         const depth = 32 - Math.clz32(buffer.length - 1);
+
         let levelSize = buffer.length;
 
         for (let level = 0; level < depth; level++) {
@@ -276,7 +289,7 @@ export class SaltedMerkleTree {
     }
 
     /**
-     * Returns an array of indices sorted by their corresponding salt hashes.
+     * Returns an array of leaf indices.
      *
      * @param {Uint8Array[]} salts Array of salt hashes to compare.
      * @returns {number[]} Indices sorted by hash order.
@@ -287,6 +300,14 @@ export class SaltedMerkleTree {
         return map;
     }
 
+    /**
+     * 
+     * @param {Uint8Array[]} claims 
+     * @param {Uint8Array[]} salts 
+     * @param {number[]} mapping 
+     * @param {number[]} [selected]
+     * @returns {Uint8Array[]|Promise<Uint8Array>[]}
+     */
     _leaves(claims, salts, mapping, selected = null) {
 
         const remainder = claims.length & 1;
