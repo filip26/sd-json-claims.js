@@ -112,13 +112,10 @@ const smt = new SaltedMerkleTree({
 ```js
 import { SaltedMerkleTree } from "sd-json-claims";
 
-const encoder = new TextEncoder();
-
 const smt = new SaltedMerkleTree({
   hash: async (chunks) => {
-    const data = concatBytes(chunks);
     return new Uint8Array(
-      await crypto.subtle.digest("SHA-256", data)
+      await crypto.subtle.digest("SHA-256", concatBytes(chunks))
     );
   },
   hmac: async (key, chunks) => {
