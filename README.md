@@ -122,18 +122,18 @@ const smt = new SaltedMerkleTree({
     );
   },
   hmac: async (key, chunks) => {
-    const cryptoKey = await crypto.subtle.importKey(
+    return new Uint8Array(
+      await crypto.subtle.sign("HMAC", key, concatBytes(chunks))
+    );
+  },
+});
+
+const hmacSecretKey = await crypto.subtle.importKey(
       "raw",
-      key,
+      rawKey,
       { name: "HMAC", hash: "SHA-256" },
       false,
       ["sign"]
     );
-
-    return new Uint8Array(
-      await crypto.subtle.sign("HMAC", cryptoKey, concatBytes(chunks))
-    );
-  },
-});
 ```
 
