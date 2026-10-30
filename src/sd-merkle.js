@@ -10,7 +10,7 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
  * verification paths, and reconstructing roots to verify disclosed claims.
  *
  * Cryptographic operations are injected through the constructor, allowing
- * Node.js crypto, Web Crypto, @noble/hashes, or custom implementations.
+ * Node.js crypto, Web Crypto, or custom implementations.
  *
  * The `hash` and `hmac` functions must return digest bytes as a Buffer or
  * Uint8Array. Both functions must be compatible with the tree's expected
@@ -18,10 +18,11 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
  *
  * @see https://github.com/filip26/salted-merkle-tree
  *
- * @param {Object} options - Cryptographic configuration.
+ * @param {Object} options Cryptographic configuration.
  * @param {(chunks: Array<Uint8Array|null|undefined>) => Uint8Array} options.hash Hashes the supplied chunks and returns the digest.
  * @param {(key: Uint8Array, chunks: Array<Uint8Array|null|undefined>) => Uint8Array} options.hmac Computes a keyed hash over the supplied chunks and returns the digest.
- * @throws {Error} If either `hash` or `hmac` is not a function.
+ * @param {number} options.maxDepth Sets maximum allowed tree depth (default: 8, i.e. 2^8 leaves, max 256 claims).
+ * @throws {Error}
  *
  * @example
  * // Node.js crypto
@@ -43,14 +44,14 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
  *     }
  *     return h.digest();
  *   },
- *   maxDepth: 8, // 2^8 leaves
+ *   maxDepth: 8, // default, 2^8 leaves, max 256 claims
  * });
  *
  * @example
  * // Custom cryptographic implementations can also be supplied.
  * const smt = new SaltedMerkleTree({
  *   hash: customHash,
- *   hmac: customHmac
+ *   hmac: customHmac,
  * });
  */
 export class SaltedMerkleTree {
