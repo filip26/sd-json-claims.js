@@ -1,6 +1,6 @@
 {
   "name": "sd-json-claims",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Privacy-preserving selective disclosure of JSON claims using salted Merkle trees",
   "type": "module",
   "exports": {

@@ -90,13 +90,13 @@ export class SaltedMerkleTree {
      * Computes the root representing the integrity commitment to a collection of
      * claims.
      *
-     * @param {Uint8Array|string} hmacKey The HMAC secret key
+     * @param {*} hmacKey The HMAC secret key
      * @param {Uint8Array[]} claims The array of claims
-     * @returns {Uint8Array} The root byte array of the salted Merkle tree
+     * @returns {Promise<Uint8Array>} The root byte array of the salted Merkle tree
      */
-    generateRoot(hmacKey, claims) {
+    async generateRoot(hmacKey, claims) {
 
-        const salts = this._salts(hmacKey, claims.length);
+        const salts = await this._salts(hmacKey, claims.length);
 
         const mapping = this._mapping(salts);
 
@@ -105,9 +105,17 @@ export class SaltedMerkleTree {
         return this._generateRoot(hmacKey, leaves);
     }
 
-    generatePath(hmacKey, claims, disclosed) {
+    /**
+     * Generates disclosure data associated with the disclosed claims.
+     *
+     * @param {*} hmacKey - The HMAC key used for path generation.
+     * @param {Uint8Array[]} claims - The array of claims.
+     * @param {number[]} disclosed - The origin indices of disclosed claims.
+     * @returns {Promise<{path: Uint8Array[], salts: Uint8Array[], indices: number[]}>} The generated path, disclosed salts, and their mapped indices.
+     */
+    async generatePath(hmacKey, claims, disclosed) {
 
-        const salts = this._salts(hmacKey, claims.length);
+        const salts = await this._salts(hmacKey, claims.length);
 
         const mapping = this._mapping(salts);
 
@@ -115,22 +123,30 @@ export class SaltedMerkleTree {
 
         const path = this._generatePath(hmacKey, leaves);
 
-        const disclosedSalts = [];
-        const disclosedIndices = [];
+        const disclosedSalts = new Array(disclosed.length);
+        const disclosedIndices = new Array(disclosed.length);
 
-        for (let i=0; i < disclosed.length; i++) {
+        for (let i = 0; i < disclosed.length; i++) {
             disclosedSalts[i] = salts[i];
             disclosedIndices[i] = mapping[disclosed[i]];
         }
 
         return {
-            path,
+            path: await path,
             salts: disclosedSalts,
             indices: disclosedIndices,
         }
     }
 
-    recreateRoot(claims, salts, indices, path) {
+    /**
+     * 
+     * @param {Uint8Array[]} claims 
+     * @param {Uint8Array[]} salts 
+     * @param {number[]} indices 
+     * @param {Uint8Array[]} path 
+     * @returns {Promise<Uint8Array>}
+     */
+    async recreateRoot(claims, salts, indices, path) {
         let mapping = Array.from({ length: indices.length }, (_, i) => i);
         mapping.sort((a, b) => indices[a] - indices[b]);
 
@@ -156,13 +172,16 @@ export class SaltedMerkleTree {
 
                 if ((nodeIndex & 1) === 1) {
                     left = path[pathIndex++];
-                    right = buffer[i];
+                    right = await buffer[i];
+
                 } else if (i + 1 < levelSize && ((nodeIndex + 1) === mapping[i + 1])) {
-                    left = buffer[i];
-                    right = buffer[i + 1];
+                    const siblings = await Promise.all([buffer[i], buffer[i + 1]]);
+                    left = siblings[0];
+                    right = siblings[1];
                     i++;
+
                 } else {
-                    left = buffer[i];
+                    left = await buffer[i];
                     right = path[pathIndex++];
                 }
 
@@ -179,15 +198,7 @@ export class SaltedMerkleTree {
         return buffer[0];
     }
 
-    _hash(chunks) {
-        return this.hash(chunks);
-    }
-
-    _hmac(key, chunks) {
-        return this.hmac(key, chunks);
-    }
-
-    _generateRoot(hmacKey, buffer) {
+    async _generateRoot(hmacKey, buffer) {
         const depth = 32 - Math.clz32(buffer.length - 1);
 
         let levelSize = buffer.length;
@@ -200,9 +211,10 @@ export class SaltedMerkleTree {
             }
 
             for (let index = 0; index < levelSize; index += 2) {
-                buffer[index >>> 1] = this._hashNode(
-                    buffer[index],
-                    buffer[index + 1]);
+
+                const [left, right] = await Promise.all([buffer[index], buffer[index + 1]]);
+
+                buffer[index >>> 1] = this._hashNode(left, right);
             }
 
             levelSize >>>= 1;
@@ -211,7 +223,7 @@ export class SaltedMerkleTree {
         return buffer[0];
     }
 
-    _generatePath(hmacKey, buffer) {
+    async _generatePath(hmacKey, buffer) {
         const path = [];
         const depth = 32 - Math.clz32(buffer.length - 1);
         let levelSize = buffer.length;
@@ -219,15 +231,14 @@ export class SaltedMerkleTree {
         for (let level = 0; level < depth; level++) {
             for (let index = 0; index < levelSize; index += 2) {
 
-                const left = buffer[index];
-                let right;
+                const siblings = [buffer[index], buffer[index + 1]];
 
                 if ((index + 1) === levelSize) {
-                    right = this._levelPadding(hmacKey, level);
+                    siblings[1] = this._levelPadding(hmacKey, level);
                     levelSize++;
-                } else {
-                    right = buffer[index + 1];
                 }
+
+                const [left, right] = await Promise.all(siblings);
 
                 let parent = null;
 
@@ -259,23 +270,32 @@ export class SaltedMerkleTree {
     * 
     * Salts are derived using the supplied HMAC secret key and an index-dependent input.
     *
-    * @param {Uint8Array|string} hmacKey The HMAC secret key used to derive salts
+    * @param {*} hmacKey The HMAC secret key used to derive salts
     * @param {number} size The number of leaf entries
-    * @returns {Uint8Array[]} The generated salts
+    * @returns {Uint8Array[]|Promise<Uint8Array[]>} The generated salts
     */
     _salts(hmacKey, size) {
         const totalSize = size + (size & 1);
         const result = new Array(totalSize);
 
         for (let i = 0; i < totalSize; i++) {
-            result[i] = this._hmac(hmacKey, [
+            result[i] = this.hmac(hmacKey, [
                 new Uint8Array([PREFIX_INDEX_PADDING]),
                 toUint32BE(i)
             ]);
         }
-        return result;
+
+        return result.some(item => item instanceof Promise)
+            ? Promise.all(result)
+            : result;
     }
 
+    /**
+     * Returns an array of indices sorted by their corresponding salt hashes.
+     *
+     * @param {Uint8Array[]} salts Array of salt hashes to compare.
+     * @returns {number[]} Indices sorted by hash order.
+     */
     _mapping(salts) {
         const map = Array.from({ length: salts.length }, (_, i) => i);
         map.sort((a, b) => compareHashes(salts[a], salts[b]));
@@ -300,12 +320,17 @@ export class SaltedMerkleTree {
         if (remainder > 0) {
             buffer[mapping[claims.length]] = this._hashLeaf(salts[claims.length], null);
         }
-
         return buffer;
     }
 
-    _hashNode(left, right) {
-        return this._hash([
+    /**
+     * 
+     * @param {Uint8Array} left 
+     * @param {Uint8Array} right 
+     * @returns {Uint8Array|Promise<Uint8Array>}
+     */
+    async _hashNode(left, right) {
+        return this.hash([
             new Uint8Array([PREFIX_NODE]),
             left,
             right
@@ -320,16 +345,21 @@ export class SaltedMerkleTree {
      * 
      * @param {Uint8Array} salt The salt associated with the claim
      * @param {Uint8Array} data The claim data, or null for an empty claim
-     * @returns {Uint8Array} The leaf hash
+     * @returns {Uint8Array|Promise<Uint8Array>} The leaf hash
      */
     _hashLeaf(salt, data) {
-        const chunks = [new Uint8Array([PREFIX_LEAF]), salt];
+
+        const chunks = [
+            new Uint8Array([PREFIX_LEAF]),
+            salt
+        ];
+
         if (data != null) {
             for (const chunk of data) {
                 chunks.push(chunk);
             }
         }
-        return this._hash(chunks);
+        return this.hash(chunks);
     }
 
     /**
@@ -341,17 +371,17 @@ export class SaltedMerkleTree {
      * Level-specific padding allows incomplete levels to be handled without
      * explicitly materializing all padding nodes.
      *
-     * @param {Uint8Array|string} hmacKey The HMAC secret key used to derive the padding value
-     * @param {Number} level The zero-based tree level
-     * @returns {Uint8Array} The padding hash for the specified level
+     * @param {*} hmacKey The HMAC secret key used to derive the padding value
+     * @param {number} level The zero-based tree level
+     * @returns {Promise<Uint8Array>} The padding hash for the specified level
      */
-    _levelPadding(hmacKey, level) {
-        const padding = this._hmac(hmacKey, [
+    async _levelPadding(hmacKey, level) {
+        const padding = await this.hmac(hmacKey, [
             new Uint8Array([PREFIX_LEVEL_PADDING]),
             toUint32BE(level)
         ]);
 
-        return this._hash([
+        return this.hash([
             new Uint8Array([PREFIX_PADDING]),
             padding
         ]);

@@ -20,7 +20,7 @@ const { claims } = extractJSONClaims({
   country: "Czech Republic",
 });
 
-const root = smt.generateRoot(hmacKey, claims);
+const root = await smt.generateRoot(hmacKey, claims);
 ```
 
 The issuer signs the root using asynchronous cryptography, then shares the signature and HMAC key with the holder.
@@ -40,7 +40,7 @@ const { disclosed: disclosedDocument, claims, indices } = extractJSONClaims(
   ])
 );
 
-const disclosure = smt.generatePath(hmacKey, claims, indices);
+const disclosure = await smt.generatePath(hmacKey, claims, indices);
 ```
 
 The disclosed document and its associated disclosure data:
@@ -74,7 +74,7 @@ import { extractJSONClaims } from "sd-json-claims";
 const { claims } = extractJSONClaims(disclosedDocument);
 const { salts, indices, path } = disclosure;
 
-const root = smt.recreateRoot(claims, salts, indices, path);
+const root = await smt.recreateRoot(claims, salts, indices, path);
 ```
 
 Verify the issuer's signature, provided by the holder, against the reconstructed root using the issuer's public key.
