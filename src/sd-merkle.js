@@ -79,6 +79,10 @@ export class SaltedMerkleTree {
      */
     async generateRoot(hmacKey, claims) {
 
+        if (claims.length > this.maxLeaves) {
+            throw new Error(`Claims exceed the maximum allowed number of leaves (${this.maxLeaves}).`);
+        }
+
         const salts = await this._salts(hmacKey, claims.length);
 
         const mapping = this._mapping(salts);
@@ -98,6 +102,10 @@ export class SaltedMerkleTree {
      * @returns {Promise<{path: Uint8Array[], salts: Uint8Array[], indices: number[]}>} The disclosure associated with the disclosed claims.
      */
     async generatePath(hmacKey, claims, disclosed) {
+
+        if (claims.length > this.maxLeaves) {
+            throw new Error(`Claims exceed the maximum allowed number of leaves (${this.maxLeaves}).`);
+        }
 
         const salts = await this._salts(hmacKey, claims.length);
 
@@ -136,6 +144,19 @@ export class SaltedMerkleTree {
      * @returns {Promise<Uint8Array>} The reconstructed root hash.
      */
     async recreateRoot(claims, salts, indices, path) {
+
+        if (claims.length > this.maxLeaves) {
+            throw new Error(`Claims exceed the maximum allowed number of leaves (${this.maxLeaves}).`);
+        }
+
+        if (claims.length != salts.length) {
+            throw new Error(`Claims length (${claims.length}) must match salts length (${salts.length}).`);
+        }
+
+        if (claims.length != indices.length) {
+            throw new Error(`Claims length (${claims.length}) must match indices length (${indices.length}).`);
+        }
+
         let mapping = Array.from({ length: indices.length }, (_, i) => i);
         mapping.sort((a, b) => indices[a] - indices[b]);
 
@@ -145,14 +166,24 @@ export class SaltedMerkleTree {
         // initialize leaves 
         for (let leafIndex = 0; leafIndex < levelSize; leafIndex++) {
             const claimIndex = mapping[leafIndex];  // claim index in the disclosed dataset
-            buffer[leafIndex] = this._hashLeaf(salts[claimIndex], claims[claimIndex]);
+
+            if (indices[claimIndex] > this.maxLeaves) {
+                throw new Error(`Leaf index (${indices[claimIndex]}) exceeds maximum allowed index (${this.maxLeaves - 1}).`);
+            }
+
             mapping[leafIndex] = indices[claimIndex];   // set original leaf index
+            buffer[leafIndex] = this._hashLeaf(salts[claimIndex], claims[claimIndex]);
         }
 
         let level = 1;
         let pathIndex = 0;
 
         while (levelSize > 1 || pathIndex < path.length) {
+
+            if (level > this.maxDepth) {
+                throw new Error(`Maximum tree depth (${this.maxDepth}) exceeded during root reconstruction.`);
+            }
+
             let nextLevelSize = 0;
 
             for (let i = 0; i < levelSize; i++) {
@@ -179,11 +210,8 @@ export class SaltedMerkleTree {
                 nextLevelSize++;
             }
 
-            if (level++ > this.maxDepth) {
-                throw new Error("max depth ...");
-            }
-
             levelSize = nextLevelSize;
+            level++;
         }
 
         return buffer[0];
@@ -432,7 +460,7 @@ function toUint32BE(num) {
 
 function compareHashes(a, b) {
     if (a.length !== b.length) {
-        throw new Error("The hash sizes are not the same.");
+        throw new Error(`Hash sizes must match. Received ${a.length} and ${b.length} bytes.`);
     }
     for (let i = 0; i < a.length; i++) {
         if (a[i] !== b[i]) {
