@@ -73,9 +73,9 @@ export class SaltedMerkleTree {
      * Computes the root representing the integrity commitment to a collection of
      * claims.
      *
-     * @param {*} hmacKey The HMAC secret key
-     * @param {Uint8Array[]} claims The array of claims
-     * @returns {Promise<Uint8Array>} The root byte array of the salted Merkle tree
+     * @param {*} hmacKey The HMAC secret key.
+     * @param {Uint8Array[]} claims The array of claims.
+     * @returns {Promise<Uint8Array>} The root byte array of the tree.
      */
     async generateRoot(hmacKey, claims) {
 
@@ -89,12 +89,13 @@ export class SaltedMerkleTree {
     }
 
     /**
-     * Generates disclosure data associated with the disclosed claims.
+     * Generates the verification path required to authenticate selected claims
+     * against a root.
      *
-     * @param {*} hmacKey - The HMAC key used for path generation.
-     * @param {Uint8Array[]} claims - The array of claims.
-     * @param {number[]} disclosed - The origin indices of disclosed claims.
-     * @returns {Promise<{path: Uint8Array[], salts: Uint8Array[], indices: number[]}>} The generated path, disclosed salts, and their mapped indices.
+     * @param {*} hmacKey The HMAC key used for path generation.
+     * @param {Uint8Array[]} claims The array of claims.
+     * @param {number[]} disclosed The ordered array of claim indices to disclose.
+     * @returns {Promise<{path: Uint8Array[], salts: Uint8Array[], indices: number[]}>} The disclosure associated with the disclosed claims.
      */
     async generatePath(hmacKey, claims, disclosed) {
 
@@ -122,12 +123,17 @@ export class SaltedMerkleTree {
     }
 
     /**
+     * Reconstructs a root from disclosed claims, their salts and original indices,
+     * and a verification path.
      * 
-     * @param {Uint8Array[]} claims 
-     * @param {Uint8Array[]} salts 
-     * @param {number[]} indices 
-     * @param {Uint8Array[]} path 
-     * @returns {Promise<Uint8Array>}
+     * The reconstructed root can be compared with a trusted root to verify the
+     * integrity and positions of the disclosed claims.
+     * 
+     * @param {Uint8Array[]} claims The disclosed claim data.
+     * @param {Uint8Array[]} salts The salts associated with the disclosed claims.
+     * @param {number[]} indices The original leaf indices of the disclosed claims.
+     * @param {Uint8Array[]} path The verification path in the verification order.
+     * @returns {Promise<Uint8Array>} The reconstructed root hash.
      */
     async recreateRoot(claims, salts, indices, path) {
         let mapping = Array.from({ length: indices.length }, (_, i) => i);
@@ -184,10 +190,13 @@ export class SaltedMerkleTree {
     }
 
     /**
+     * Computes the root representing the integrity commitment to a collection of leaf hashes.
      * 
-     * @param {*} hmacKey 
-     * @param {Uint8Array[]|Promise<Uint8Array>[]} buffer 
-     * @returns {Promise<Uint8Array}
+     * The input buffer is modified in place. The initial number of leaves must be even and greater than one.
+     * 
+     * @param {*} hmacKey The HMAC secret key used for depth-based padding.
+     * @param {Uint8Array[]|Promise<Uint8Array>[]} buffer The array of leaf hashes (overridden during computation).
+     * @returns {Promise<Uint8Array>} The root byte array of the tree.
      */
     async _generateRoot(hmacKey, buffer) {
         const depth = 32 - Math.clz32(buffer.length - 1);
@@ -215,10 +224,17 @@ export class SaltedMerkleTree {
     }
 
     /**
+     * Generates the verification path required to authenticate selected leaves against a root.
      * 
-     * @param {*} hmacKey 
-     * @param {Uint8Array[]|Promise<Uint8Array>[]} buffer 
-     * @returns {Promise<Uint8Array[]>}
+     * Selected leaves are represented by null entries in the input buffer. 
+     * The resulting path contains the hashes needed to reconstruct the root.
+     * 
+     * The input buffer is modified in place. The initial number of leaves
+     * must be even and greater than one.
+     * 
+     * @param {*} hmacKey The HMAC secret key used for depth-based padding.
+     * @param {Uint8Array[]|Promise<Uint8Array>[]} buffer The array of leaf hashes, with selected leaves represented by null (overridden during computation).
+     * @returns {Promise<Uint8Array[]>} The verification path hashes in verification order.
      */
     async _generatePath(hmacKey, buffer) {
         const path = [];
@@ -268,9 +284,9 @@ export class SaltedMerkleTree {
     * 
     * Salts are derived using the supplied HMAC secret key and an index-dependent input.
     *
-    * @param {*} hmacKey The HMAC secret key used to derive salts
-    * @param {number} size The number of leaf entries
-    * @returns {Uint8Array[]|Promise<Uint8Array[]>} The generated salts
+    * @param {*} hmacKey The HMAC secret key used to derive salts.
+    * @param {number} size The number of leaf entries.
+    * @returns {Uint8Array[]|Promise<Uint8Array[]>} The generated salts.
     */
     _salts(hmacKey, size) {
         const totalSize = size + (size & 1);
@@ -289,10 +305,13 @@ export class SaltedMerkleTree {
     }
 
     /**
-     * Returns an array of leaf indices.
+     * Determines the slot assigned to each original leaf index using its salt and the salt ordering.
      *
-     * @param {Uint8Array[]} salts Array of salt hashes to compare.
-     * @returns {number[]} Indices sorted by hash order.
+     * The mapping represents the secret-keyed HMAC slot distribution and associates each original 
+     * index with its position in the sorted order.
+     * 
+     * @param {Uint8Array[]} salts The salts associated with the leaf entries.
+     * @returns {number[]} The slot assigned to each original index.
      */
     _mapping(salts) {
         const map = Array.from({ length: salts.length }, (_, i) => i);
@@ -301,12 +320,17 @@ export class SaltedMerkleTree {
     }
 
     /**
+     * Computes salted leaf hashes while omitting selected claims. H(PREFIX_LEAF || SALT || DATA).
      * 
-     * @param {Uint8Array[]} claims 
-     * @param {Uint8Array[]} salts 
-     * @param {number[]} mapping 
-     * @param {number[]} [selected]
-     * @returns {Uint8Array[]|Promise<Uint8Array>[]}
+     * The resulting leaves are intended for verification-path generation. Selected
+     * entries remain null, allowing the corresponding claims to be withheld
+     * while constructing a proof.
+     * 
+     * @param {Uint8Array[]} claims The claim data.
+     * @param {Uint8Array[]} salts The salts associated with the claims, including a padding salt if required.
+     * @param {number[]} mapping The mapping from claim positions to leaf positions.
+     * @param {number[]} [selected] The sorted indices of claims to omit, or null to include all claims.
+     * @returns {Uint8Array[]|Promise<Uint8Array>[]} The leaves for root construction or verification path generation.
      */
     _leaves(claims, salts, mapping, selected = null) {
 
@@ -330,10 +354,13 @@ export class SaltedMerkleTree {
     }
 
     /**
+     * Computes the hash of an internal node. H(PREFIX_NODE || left || right).
      * 
-     * @param {Uint8Array} left 
-     * @param {Uint8Array} right 
-     * @returns {Uint8Array|Promise<Uint8Array>}
+     * The left and right child hashes are ordered inputs; their positions are significant.
+     * 
+     * @param {Uint8Array} left The left child hash.
+     * @param {Uint8Array} right The right child hash.
+     * @returns {Uint8Array|Promise<Uint8Array>} The parent hash.
      */
     _hashNode(left, right) {
         return this.hash([
@@ -349,11 +376,11 @@ export class SaltedMerkleTree {
      * Including a salt helps protect low-entropy claim data against offline
      * dictionary attacks.
      * 
-     * @param {Uint8Array} salt The salt associated with the claim
-     * @param {Uint8Array} data The claim data, or null for an empty claim
-     * @returns {Uint8Array|Promise<Uint8Array>} The leaf hash
+     * @param {Uint8Array} salt The salt associated with the claim.
+     * @param {Uint8Array[]} [data] The claim data, or null for an empty claim.
+     * @returns {Uint8Array|Promise<Uint8Array>} The leaf hash.
      */
-    _hashLeaf(salt, data) {
+    _hashLeaf(salt, data = null) {
 
         const chunks = [
             PREFIX_LEAF,
@@ -377,9 +404,9 @@ export class SaltedMerkleTree {
      * Level-specific padding allows incomplete levels to be handled without
      * explicitly materializing all padding nodes.
      *
-     * @param {*} hmacKey The HMAC secret key used to derive the padding value
-     * @param {number} level The zero-based tree level
-     * @returns {Promise<Uint8Array>} The padding hash for the specified level
+     * @param {*} hmacKey The HMAC secret key used to derive the padding value.
+     * @param {number} level The zero-based tree level.
+     * @returns {Promise<Uint8Array>} The padding hash for the specified level.
      */
     async _levelPadding(hmacKey, level) {
         const padding = await this.hmac(hmacKey, [
