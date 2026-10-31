@@ -24,7 +24,7 @@ The issuer generates a Merkle root from all JSON claims.
 ```js
 import { extractJSONClaims } from "sd-json-claims";
 
-const { claims } = extractJSONClaims({
+const { claims, document } = extractJSONClaims({
   name: "Filip",
   city: "Prague",
   country: "Czech Republic",
@@ -43,11 +43,7 @@ The disclosing party selects claims to disclose and generates the corresponding 
 import { extractJSONClaims } from "sd-json-claims";
 
 const { document: disclosedDocument, claims, indices } = extractJSONClaims(
-  {
-    name: "Filip",
-    city: "Prague",
-    country: "Czech Republic",
-  },
+  document,
   new Set([
     "/city",
     "/country",
