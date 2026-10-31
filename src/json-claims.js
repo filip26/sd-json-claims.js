@@ -1,23 +1,23 @@
 import canonicalize from "canonicalize";
 
 /**
- * Extracts all claims from a document object or its JSON string representation,
+ * Extracts all claims from a document object or its JSON representation,
  * designating the specified JSON pointers as selected, and returns the claims
  * along with the target document (original if full disclosure, or filtered if disclosed is provided).
  *
- * @param {Object|string} document - The document represented as a map or a JSON string.
- * @param {Array<string>|Set<string>} [pointers] - The set of JSON pointers to designate as selected.
- * @returns {Object} An object containing the extracted claims, optional selected indices, and the target document.
+ * @param {Object|string} document The document represented as a map or a JSON.
+ * @param {Set<string>} [pointers] The set of JSON pointers to designate as selected.
+ * @returns {{document: Object, claims: Uint8Array[], indices: number[]}} An object containing the extracted claims, optional selected indices, and the target document.
  */
 export function extractJSONClaims(document, pointers = null) {
     var data = typeof document === "string" ? JSON.parse(document) : document;
     const claims = [];
     const indices = [];
 
-    var disclosed = _flatten(data, "", claims, p => !pointers ? false : pointers.has(p), indices);
+    var disclosedDocument = _flatten(data, "", claims, p => !pointers ? false : pointers.has(p), indices);
 
     return {
-        disclosed: !disclosed ? document : disclosed,
+        document: !disclosedDocument ? document : disclosedDocument,
         claims,
         indices,
     };

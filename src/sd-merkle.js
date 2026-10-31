@@ -12,10 +12,12 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
  * Cryptographic operations are injected through the constructor, allowing
  * Node.js crypto, Web Crypto, or custom implementations.
  *
- * The `hash` and `hmac` functions must return digest bytes as a Buffer or
- * Uint8Array. Both functions must be compatible with the tree's expected
- * input format and hashing semantics.
- *
+ * The `hash` and `hmac` functions can be synchronous or asynchronous and must
+ * return digest bytes as Uint8Array (or a Promise resolving to them).
+ * Both functions must be compatible with the tree's expected input format and
+ * hashing semantics.
+ * 
+ * @author Filip Kolařík <filip26@gmail.com> 
  * @see https://github.com/filip26/salted-merkle-tree
  *
  * @param {Object} options Cryptographic configuration.
@@ -53,6 +55,7 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
  *   hash: customHash,
  *   hmac: customHmac,
  * });
+ * 
  */
 export class SaltedMerkleTree {
     constructor(options = {}) {
