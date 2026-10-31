@@ -13,7 +13,7 @@ Selective disclosure is used in a three-party model allowing a verifier to valid
 
 1. Issuer: Generates cryptographic commitment to data, ensuring authenticity and integrity through digital signing.
 2. Holder: Manages selective disclosure, choosing specific claims to reveal while preserving the immutable issuer signature.
-3. Verifier: Validates the authenticity of the disclosed subset against the trusted issuer signature without requiring interaction with the issuer.
+3. Verifier: Validates the authenticity and integrity of the disclosed subset against the trusted issuer signature without requiring interaction with the issuer.
 
 ## Examples
 
@@ -145,4 +145,6 @@ const hmacSecretKey = await crypto.subtle.importKey(
       ["sign"]
     );
 ```
+
+
 
