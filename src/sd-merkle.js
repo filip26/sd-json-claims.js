@@ -472,3 +472,20 @@ function compareHashes(a, b) {
     }
     return 0;
 }
+
+export function concatUint8Arrays(arrays) {
+    let length = 0;
+    for (let i = 0; i < arrays.length; i++) {
+        length += arrays[i].length;
+    }
+
+    const result = new Uint8Array(length);
+    let offset = 0;
+
+    for (let i = 0; i < arrays.length; i++) {
+        result.set(arrays[i], offset);
+        offset += arrays[i].length;
+    }
+
+    return result;
+}

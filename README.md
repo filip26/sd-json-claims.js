@@ -121,17 +121,17 @@ const smt = new SaltedMerkleTree({
 #### Web Crypto API
 
 ```js
-import { SaltedMerkleTree } from "sd-json-claims";
+import { SaltedMerkleTree, concatUint8Arrays } from "sd-json-claims";
 
 const smt = new SaltedMerkleTree({
   hash: async (chunks) => {
     return new Uint8Array(
-      await crypto.subtle.digest("SHA-256", concatBytes(chunks))
+      await crypto.subtle.digest("SHA-256", concatUint8Arrays(chunks))
     );
   },
   hmac: async (key, chunks) => {
     return new Uint8Array(
-      await crypto.subtle.sign("HMAC", key, concatBytes(chunks))
+      await crypto.subtle.sign("HMAC", key, concatUint8Arrays(chunks))
     );
   },
   maxDepth: 8,  // default, 2^8 leaves, max 256 claims
