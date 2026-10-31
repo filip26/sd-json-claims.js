@@ -43,7 +43,11 @@ The disclosing party selects claims to disclose and generates the corresponding 
 import { extractJSONClaims } from "sd-json-claims";
 
 const { document: disclosedDocument, claims, indices } = extractJSONClaims(
-  data,
+  {
+    name: "Filip",
+    city: "Prague",
+    country: "Czech Republic",
+  },
   new Set([
     "/city",
     "/country",
@@ -69,7 +73,7 @@ The disclosed document and its associated disclosure data:
   path: [
     ...
   ],
-  indices: [0, 2],
+  indices: [..., ...],
   signature: Sig(root)
 }
 ```
@@ -101,18 +105,18 @@ import { SaltedMerkleTree } from "sd-json-claims";
 
 const smt = new SaltedMerkleTree({
   hash: (chunks) => {
-    const h = createHash("sha256");
-    for (const c of chunks) {
-      if (c != null) h.update(c);
+    const hash = createHash("sha256");
+    for (const chunk of chunks) {
+      hash.update(chunk);
     }
-    return h.digest();
+    return hash.digest();
   },
   hmac: (key, chunks) => {
-    const h = createHmac("sha256", key);
-    for (const c of chunks) {
-      if (c != null) h.update(c);
+    const hmac = createHmac("sha256", key);
+    for (const chunk of chunks) {
+      hmac.update(chunk);
     }
-    return h.digest();
+    return hmac.digest();
   },
   maxDepth: 8,  // default, 2^8 leaves, max 256 claims
 });

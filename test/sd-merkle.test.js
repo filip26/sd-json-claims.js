@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert";
-import { createHash, createHmac, webcrypto } from "crypto";
-import { SaltedMerkleTree, extractJSONClaims } from "../src/index.js";
+import { createHash, createHmac } from "crypto";
+import { SaltedMerkleTree, extractJSONClaims, concatUint8Arrays } from "../src/index.js";
 
 test("Node.js crypto primitives", async () => {
 
@@ -9,18 +9,14 @@ test("Node.js crypto primitives", async () => {
         hash: (chunks) => {
             const h = createHash("sha256");
             for (const c of chunks) {
-                if (c != null) {
-                    h.update(c);
-                }
+                h.update(c);
             }
             return h.digest();
         },
         hmac: (key, chunks) => {
             const h = createHmac("sha256", key);
             for (const c of chunks) {
-                if (c != null) {
-                    h.update(c);
-                }
+                h.update(c);
             }
             return h.digest();
         }
@@ -28,7 +24,7 @@ test("Node.js crypto primitives", async () => {
 
     const hmacKey = Buffer.from("00112233445566778899AABBCCDDEEFF00112233445566778899AABBCCDDEEFF", "hex");
 
-    const { claims: allClaims } = extractJSONClaims({
+    const { claims: allClaims, document } = extractJSONClaims({
         name: "Filip",
         city: "Prague",
         country: "Czech Republic"
@@ -40,17 +36,13 @@ test("Node.js crypto primitives", async () => {
     assert.ok(root instanceof Uint8Array);
     assert.strictEqual(root.length, 32);
 
-    const { claims: disclosedClaims, disclosed, indices: disclosedIndices } = extractJSONClaims(
-        {
-            name: "Filip",
-            city: "Prague",
-            country: "Czech Republic"
-        },
+    const { claims: disclosedClaims, document: disclosedDocument, indices: disclosedIndices } = extractJSONClaims(
+        document,
         new Set(["/country", "/city"]));
 
     const disclosure = await smt.generatePath(hmacKey, disclosedClaims, disclosedIndices);
 
-    const { claims } = extractJSONClaims(disclosed);
+    const { claims } = extractJSONClaims(disclosedDocument);
 
     const ref = await smt.recreateRoot(
         claims,
@@ -70,14 +62,13 @@ test("Web Crypto primitive", async () => {
 
     const smt = new SaltedMerkleTree({
         hash: async (chunks) => {
-            // const data = concat(chunks);
             return new Uint8Array(
-                await crypto.subtle.digest("SHA-256", Buffer.concat(chunks))
+                await crypto.subtle.digest("SHA-256", concatUint8Arrays(chunks))
             );
         },
         hmac: async (key, chunks) => {
             return new Uint8Array(
-                await crypto.subtle.sign("HMAC", key, Buffer.concat(chunks))
+                await crypto.subtle.sign("HMAC", key, concatUint8Arrays(chunks))
             );
         },
         maxDepth: 2,
@@ -91,7 +82,7 @@ test("Web Crypto primitive", async () => {
         ["sign"]
     );
 
-    const { claims: allClaims } = extractJSONClaims({
+    const { claims: allClaims, document } = extractJSONClaims({
         name: "Filip",
         city: "Prague",
         country: "Czech Republic"
@@ -103,24 +94,19 @@ test("Web Crypto primitive", async () => {
     assert.ok(root instanceof Uint8Array);
     assert.strictEqual(root.length, 32);
 
-    const { claims: disclosedClaims, disclosed, indices: disclosedIndices } = extractJSONClaims(
-        {
-            name: "Filip",
-            city: "Prague",
-            country: "Czech Republic"
-        },
+    const { claims: disclosedClaims, document: disclosedDocument, indices: disclosedIndices } = extractJSONClaims(
+        document,
         new Set(["/country", "/city"]));
 
     const disclosure = await smt.generatePath(hmacKey, disclosedClaims, disclosedIndices);
 
-    const { claims } = extractJSONClaims(disclosed);
+    const { claims } = extractJSONClaims(disclosedDocument);
 
     const ref = await smt.recreateRoot(
         claims,
         disclosure.salts,
         disclosure.indices,
         disclosure.path);
-
 
     assert.ok(ref instanceof Uint8Array);
     assert.strictEqual(ref.length, 32);
