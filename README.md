@@ -42,7 +42,7 @@ The disclosing party selects claims to disclose and generates the corresponding 
 ```js
 import { extractJSONClaims } from "sd-json-claims";
 
-const { disclosed: disclosedDocument, claims, indices } = extractJSONClaims(
+const { document: disclosedDocument, claims, indices } = extractJSONClaims(
   data,
   new Set([
     "/city",
