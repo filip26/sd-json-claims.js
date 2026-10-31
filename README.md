@@ -33,7 +33,9 @@ const { claims, document } = extractJSONClaims({
 const root = await smt.generateRoot(hmacKey, claims);
 ```
 
-The issuer signs the root using asynchronous cryptography, then shares the signature and HMAC key with the holder.
+The issuer signs the root using asynchronous cryptography, then shares the document, the signature, and HMAC key with the holder.
+
+> Note: The HMAC key is never shared with the verifier; it is used to hide the original claims distribution and to add entropy to the leaf hashes, preventing dictionary attacks and brute-force attacks.
 
 ### Holder (Disclosing Party)
 
