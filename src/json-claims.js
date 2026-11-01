@@ -37,12 +37,8 @@ function _flatten(node, path, claims, isSelected, indices) {
                 throw new Error(`Empty JSON arrays are not allowed as a JSON claim value at path "${path}", got ${node}.`);
             }
 
-            const isArraySelected = isSelected(path);
-
-            if (isArraySelected) {
-
+            if (isSelected(path)) {
                 const result = [];
-
                 for (let i = 0; i < node.length; i++) {
                     result.push(_flatten(
                         node[i],
@@ -61,7 +57,7 @@ function _flatten(node, path, claims, isSelected, indices) {
                     node[i],
                     path + "/" + i,
                     claims,
-                    isArraySelected ? _ => true : isSelected,
+                    isSelected,
                     indices);
 
                 if (element !== null) {
