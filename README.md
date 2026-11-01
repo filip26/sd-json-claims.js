@@ -113,7 +113,7 @@ Initialize `SaltedMerkleTree` with SHA-256 hashing and HMAC-SHA-256. Choose the 
 #### Node.js
 
 ```js
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, generateKeySync, createSecretKey } from "node:crypto";
 import { SaltedMerkleTree } from "sd-json-claims";
 
 const smt = new SaltedMerkleTree({
@@ -133,6 +133,23 @@ const smt = new SaltedMerkleTree({
   },
   maxDepth: 8,  // default, 2^8 leaves, max 256 claims
 });
+
+// Generate a cryptographically secure, random HMAC key.
+// 256 bits (32 bytes), suitable for HMAC-SHA-256.
+const generatedKey = generateKeySync("hmac", {
+  length: 256,
+});
+
+// Export as raw bytes (32 bytes).
+const rawKey = generatedKey.export();
+
+// Import the raw key.
+const importedKey = createSecretKey(rawKey);
+// or
+const importedKey = Buffer.isBuffer(rawKey) 
+  ? rawKey 
+  : Buffer.from(rawKey);
+
 ```
 
 #### Web Crypto API
@@ -154,13 +171,32 @@ const smt = new SaltedMerkleTree({
   maxDepth: 8,  // default, 2^8 leaves, max 256 claims
 });
 
-const hmacSecretKey = await crypto.subtle.importKey(
+// Generate a cryptographically secure, random HMAC key.
+// 256 bits (32 bytes), suitable for HMAC-SHA-256.
+const generatedKey = await crypto.subtle.generateKey(
+  {
+    name: "HMAC",
+    hash: "SHA-256",
+    length: 256,
+  },
+  true, // Allow exporting
+  ["sign"]
+);    
+
+// Export as raw bytes (32 bytes).
+const rawKey = new Uint8Array(
+  await crypto.subtle.exportKey("raw", hmacSecretKey)
+);
+
+// Import the raw key.
+const importedKey = await crypto.subtle.importKey(
       "raw",
       rawKey,
       { name: "HMAC", hash: "SHA-256" },
       false,
       ["sign"]
     );
+
 ```
 
 

@@ -20,7 +20,7 @@ export function extractJSONClaims(document, selectors = null) {
         data,
         "",
         claims,
-        selectors === null || selectors.length === 0
+        (selectors === null || selectors.length === 0)
             ? _ => false
             : p => selectors.has(p),
         indices);
