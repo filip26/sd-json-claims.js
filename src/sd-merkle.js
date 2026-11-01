@@ -35,14 +35,14 @@ const PREFIX_LEVEL_PADDING = new Uint8Array([0x11]);
  *   hash: (chunks) => {
  *     const h = createHash("sha256");
  *     for (const chunk of chunks) {
- *       if (chunk != null) h.update(chunk);
+ *       h.update(chunk);
  *     }
  *     return h.digest();
  *   },
  *   hmac: (key, chunks) => {
  *     const h = createHmac("sha256", key);
  *     for (const chunk of chunks) {
- *       if (chunk != null) h.update(chunk);
+ *       h.update(chunk);
  *     }
  *     return h.digest();
  *   },
@@ -152,11 +152,11 @@ export class SaltedMerkleTree {
             throw new Error(`Claims exceed the maximum allowed number of leaves (${this.maxLeaves}).`);
         }
 
-        if (claims.length != salts.length) {
+        if (claims.length !== salts.length) {
             throw new Error(`Claims length (${claims.length}) must match salts length (${salts.length}).`);
         }
 
-        if (claims.length != indices.length) {
+        if (claims.length !== indices.length) {
             throw new Error(`Claims length (${claims.length}) must match indices length (${indices.length}).`);
         }
 
@@ -426,7 +426,7 @@ export class SaltedMerkleTree {
             salt
         ];
 
-        if (data != null) {
+        if (data !== null) {
             for (const chunk of data) {
                 chunks.push(chunk);
             }
