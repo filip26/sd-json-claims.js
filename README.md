@@ -18,6 +18,18 @@ Selective disclosure is used in a three-party trust model allowing a verifier to
 2. Holder: Manages selective disclosure, choosing specific claims to reveal while preserving the immutable issuer signature.
 3. Verifier: Validates the authenticity and integrity of the disclosed subset against the trusted issuer signature without requiring interaction with the issuer.
 
+## Installation
+
+```bash
+npm install sd-json-claims
+
+```
+
+```bash
+yarn add sd-json-claims
+
+```
+
 ## Examples
 
 ### Issuer
