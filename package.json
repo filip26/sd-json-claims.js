@@ -32,7 +32,7 @@
   "homepage": "https://github.com/filip26/sd-json-claims.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/filip26/sd-json-claims.js"
+    "url": "git+https://github.com/filip26/sd-json-claims.js.git"
   },
   "bugs": {
     "url": "https://github.com/filip26/sd-json-claims.js/issues"

@@ -25,7 +25,12 @@ export function extractJSONClaims(document, pointers = null) {
 
 function _flatten(node, path, claims, isSelected, indices) {
 
-    if (node !== null && typeof node === "object") {
+    if (node === null || node === undefined) {
+        throw new Error(`Null or undefined values are not allowed as a JSON claim value at path "${path}", got ${node}.`);
+    }
+
+    if (typeof node === "object") {
+
         if (Array.isArray(node)) {
             for (let i = 0; i < node.length; i++) {
                 _flatten(
