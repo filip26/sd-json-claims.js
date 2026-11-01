@@ -194,8 +194,13 @@ export class SaltedMerkleTree {
                 let left, right;
 
                 if ((nodeIndex & 1) === 1) {
-                    left = path[pathIndex++];
-                    right = await buffer[i];
+
+                    if (pathIndex < path.length) {
+                        left = path[pathIndex++];
+                        right = buffer[i] instanceof Promise ? await buffer[i] : buffer[i];
+                    } else {
+                        throw new Error(`The path is truncated, expected left hash at index (${pathIndex}) but the path length is (${path.length}).`);
+                    }
 
                 } else if (i + 1 < levelSize && ((nodeIndex + 1) === mapping[i + 1])) {
                     const siblings = await Promise.all([buffer[i], buffer[i + 1]]);
@@ -203,9 +208,12 @@ export class SaltedMerkleTree {
                     right = siblings[1];
                     i++;
 
-                } else {
-                    left = await buffer[i];
+                } else if (pathIndex < path.length) {
+                    left = buffer[i] instanceof Promise ? await buffer[i] : buffer[i];
                     right = path[pathIndex++];
+
+                } else {
+                    throw new Error(`The path is truncated, expected right hash at index (${pathIndex}) but the path length is (${path.length}).`);
                 }
 
                 buffer[nextLevelSize] = this._hashNode(left, right);
