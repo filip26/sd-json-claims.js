@@ -34,7 +34,7 @@ function _flatten(node, path, claims, isSelected, indices) {
         if (Array.isArray(node)) {
 
             if (node.length === 0) {
-                throw new Error(`Empty arrays are not allowed as a JSON claim value at path "${path}", got ${node}.`);
+                throw new Error(`Empty JSON arrays are not allowed as a JSON claim value at path "${path}", got ${node}.`);
             }
 
             const isArraySelected = isSelected(path);
@@ -72,6 +72,10 @@ function _flatten(node, path, claims, isSelected, indices) {
                 }
             }
             return result;
+        }
+
+        if (node.length === 0) {
+            throw new Error(`Empty JSON objects are not allowed as a JSON claim value at path "${path}", got ${node}.`);
         }
 
         let map = null;
