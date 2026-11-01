@@ -160,10 +160,10 @@ export class SaltedMerkleTree {
             throw new Error(`Claims length (${claims.length}) must match indices length (${indices.length}).`);
         }
 
-        let mapping = Array.from({ length: indices.length }, (_, i) => i);
+        const mapping = Array.from({ length: indices.length }, (_, i) => i);
         mapping.sort((a, b) => indices[a] - indices[b]);
 
-        let buffer = new Array(claims.length);
+        const buffer = new Array(claims.length);
         let levelSize = buffer.length;
 
         // initialize leaves 

@@ -6,23 +6,23 @@ import canonicalize from "canonicalize";
  * along with the target document (original if full disclosure, or filtered if disclosed is provided).
  *
  * @param {Object|string} document The document represented as a map or a JSON.
- * @param {Set<string>} [pointers] The set of JSON pointers to designate as selected.
- * @returns {{document: Object, claims: Uint8Array[], indices: number[]}} An object containing the extracted claims, optional selected indices, and the target document.
+ * @param {Set<string>} [selectors] The set of JSON pointers to designate as selected.
+ * @returns {{document: Object, claims: Uint8Array[], indices: number[]}} An object containing the extracted claims, optional selected indices, and the disclosed document.
  */
-export function extractJSONClaims(document, pointers = null) {
+export function extractJSONClaims(document, selectors = null) {
 
-    var data = typeof document === "string" ? JSON.parse(document) : document;
+    let data = typeof document === "string" ? JSON.parse(document) : document;
 
     const claims = [];
     const indices = [];
 
-    var disclosedDocument = _flatten(
+    let disclosedDocument = _flatten(
         data,
         "",
         claims,
-        !pointers
+        selectors === null
             ? _ => false
-            : p => pointers.has(p),
+            : p => selectors.has(p),
         indices);
 
     return {
@@ -89,15 +89,15 @@ function _flatten(node, path, claims, isSelected, indices) {
             const key = keys[i];
             const escapedKey = key.replace(/~/g, "~0").replace(/\//g, "~1");
 
-            var value = _flatten(
+            const value = _flatten(
                 node[key],
                 path + "/" + escapedKey,
                 claims,
                 isSelected(path) ? _ => true : isSelected,
                 indices);
 
-            if (!!value) {
-                if (!map) {
+            if (value !== null) {
+                if (map === null) {
                     map = {};
                 }
                 map[key] = value;
