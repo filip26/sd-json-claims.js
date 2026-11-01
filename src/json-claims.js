@@ -20,13 +20,13 @@ export function extractJSONClaims(document, selectors = null) {
         data,
         "",
         claims,
-        selectors === null
+        selectors === null || selectors.length === 0
             ? _ => false
             : p => selectors.has(p),
         indices);
 
     return {
-        document: !disclosedDocument ? document : disclosedDocument,
+        document: disclosedDocument !== null ? disclosedDocument : data,
         claims,
         indices,
     };
