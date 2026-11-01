@@ -32,26 +32,57 @@ function _flatten(node, path, claims, isSelected, indices) {
     if (typeof node === "object") {
 
         if (Array.isArray(node)) {
+
+            if (node.length === 0) {
+                throw new Error(`Empty arrays are not allowed as a JSON claim value at path "${path}", got ${node}.`);
+            }
+
+            const isArraySelected = isSelected(path);
+
+            if (isArraySelected) {
+
+                const result = [];
+
+                for (let i = 0; i < node.length; i++) {
+                    result.push(_flatten(
+                        node[i],
+                        path + "/" + i,
+                        claims,
+                        _ => true,
+                        indices));
+                }
+                return result;
+            }
+
+            let result = null;
+
             for (let i = 0; i < node.length; i++) {
-                _flatten(
+                const element = _flatten(
                     node[i],
                     path + "/" + i,
                     claims,
-                    isSelected(path) ? _ => true : isSelected,
+                    isArraySelected ? _ => true : isSelected,
                     indices);
+
+                if (element !== null) {
+                    if (result === null) {
+                        result = {};
+                    }
+                    result[String(i)] = element;
+                }
             }
-            return
+            return result;
         }
 
         let map = null;
         const keys = Object.keys(node).sort();
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i];
-            const esc = key.replace(/~/g, "~0").replace(/\//g, "~1");
+            const escapedKey = key.replace(/~/g, "~0").replace(/\//g, "~1");
 
             var value = _flatten(
                 node[key],
-                path + "/" + esc,
+                path + "/" + escapedKey,
                 claims,
                 isSelected(path) ? _ => true : isSelected,
                 indices);
