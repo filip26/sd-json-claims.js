@@ -185,7 +185,7 @@ const generatedKey = await crypto.subtle.generateKey(
 
 // Export as raw bytes (32 bytes).
 const rawKey = new Uint8Array(
-  await crypto.subtle.exportKey("raw", hmacSecretKey)
+  await crypto.subtle.exportKey("raw", generatedKey)
 );
 
 // Import the raw key.
