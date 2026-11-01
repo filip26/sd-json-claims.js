@@ -10,11 +10,20 @@ import canonicalize from "canonicalize";
  * @returns {{document: Object, claims: Uint8Array[], indices: number[]}} An object containing the extracted claims, optional selected indices, and the target document.
  */
 export function extractJSONClaims(document, pointers = null) {
+
     var data = typeof document === "string" ? JSON.parse(document) : document;
+
     const claims = [];
     const indices = [];
 
-    var disclosedDocument = _flatten(data, "", claims, p => !pointers ? false : pointers.has(p), indices);
+    var disclosedDocument = _flatten(
+        data,
+        "",
+        claims,
+        !pointers
+            ? _ => false
+            : p => pointers.has(p),
+        indices);
 
     return {
         document: !disclosedDocument ? document : disclosedDocument,
