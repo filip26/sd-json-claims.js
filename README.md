@@ -3,6 +3,9 @@
 
 # SD JSON Claims
 
+[![npm version](https://img.shields.io/npm/v/sd-json-claims.svg)](https://www.npmjs.com/package/sd-json-claims)
+[![License](https://img.shields.io/npm/l/sd-json-claims.svg)](https://www.npmjs.com/package/sd-json-claims)
+
 Privacy-preserving selective disclosure of JSON documents using [Salted Merkle Tree](https://github.com/filip26/salted-merkle-tree). 
 
 A JSON document is transformed into an ordered sequence of claims that are signed by an issuer. The signature tethered with the origin document is passed to a holder, which is a disclosing party having the ability to select a particular set of claims to be disclosed and shared as a JSON document with a verifier. The verifier does not receive all the claims included in the origin document, only the disclosed claims, and can verify the disclosed document fragment is the one signed by the issuer while undisclosed claims stay secret.
