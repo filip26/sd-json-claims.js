@@ -11,12 +11,12 @@ import canonicalize from "canonicalize";
  */
 export function extractJSONClaims(document, selectors = null) {
 
-    let data = typeof document === "string" ? JSON.parse(document) : document;
+    const data = typeof document === "string" ? JSON.parse(document) : document;
 
     const claims = [];
     const indices = [];
 
-    let disclosedDocument = _flatten(
+    const disclosedDocument = _flatten(
         data,
         "",
         claims,
