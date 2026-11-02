@@ -166,6 +166,7 @@ export class SaltedMerkleTree {
             if (diff === 0) {
                 throw new Error(`Duplicate indices found (${indices[a]}, ${indices[b]}).`);
             }
+            return diff;
         });
 
         const buffer = new Array(claims.length);
