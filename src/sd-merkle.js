@@ -161,7 +161,12 @@ export class SaltedMerkleTree {
         }
 
         const mapping = Array.from({ length: indices.length }, (_, i) => i);
-        mapping.sort((a, b) => indices[a] - indices[b]);
+        mapping.sort((a, b) => {
+            const diff = indices[a] - indices[b];
+            if (diff === 0) {
+                throw new Error(`Duplicate indices found (${indices[a]}, ${indices[b]}).`);
+            }
+        });
 
         const buffer = new Array(claims.length);
         let levelSize = buffer.length;
