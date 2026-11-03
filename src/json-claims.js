@@ -1,17 +1,33 @@
 import canonicalize from "canonicalize";
 
+const textEncoder = new TextEncoder();
+const EMPTY_CLAIM = new Uint8Array([0x00]);
+
 /**
- * Extracts all claims from a document object or its JSON representation,
- * designating the specified JSON pointers as selected, and returns the claims
- * along with the target document (original if full disclosure, or filtered if disclosed is provided).
+ * Extracts claims from a JSON document and optionally discloses selected
+ * JSON Pointer locations.
  *
- * @param {Object|string} document The document represented as a map or a JSON.
- * @param {Set<string>} [selectors] The set of JSON pointers to designate as selected.
- * @returns {{document: Object, claims: Uint8Array[], indices: number[]}} An object containing the extracted claims, optional selected indices, and the disclosed document.
+ * Each undisclosed scalar value produces a claim consisting of:
+ * [UTF-8(JSON Pointer), 0x00, UTF-8(canonical JSON value)]
+ *
+ * Object properties are traversed in lexicographical order to ensure
+ * deterministic claim ordering.
+ *
+ * @param {Object|string} document The document or its JSON representation.
+ * @param {Set<string>|null} [selectors=null] JSON Pointers identifying values to disclose.
+ * @returns {{ document: Object, claims: (Uint8Array[]|null)[], indices: number[]}} The disclosed document, extracted claims, and selected claim indices.
  */
 export function extractJSONClaims(document, selectors = null) {
 
     const data = typeof document === "string" ? JSON.parse(document) : document;
+
+    if (data === null || typeof data !== "object") {
+        throw new TypeError("The document must be a non-null JSON object or array.");
+    }
+
+    if (selectors !== null && !(selectors instanceof Set)) {
+        throw new TypeError("Selectors must be a Set or null.");
+    }
 
     const claims = [];
     const indices = [];
@@ -20,7 +36,7 @@ export function extractJSONClaims(document, selectors = null) {
         data,
         "",
         claims,
-        (selectors === null || selectors.length === 0)
+        (selectors === null || selectors.size === 0)
             ? _ => false
             : p => selectors.has(p),
         indices);
@@ -87,11 +103,10 @@ function _flatten(node, path, claims, isSelected, indices) {
         const keys = Object.keys(node).sort();
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i];
-            const escapedKey = key.replace(/~/g, "~0").replace(/\//g, "~1");
 
             const value = _flatten(
                 node[key],
-                path + "/" + escapedKey,
+                path + "/" + _escapePointer(key),
                 claims,
                 isSelected(path) ? _ => true : isSelected,
                 indices);
@@ -112,10 +127,26 @@ function _flatten(node, path, claims, isSelected, indices) {
         return node;
     }
 
+    const canonicalValue = canonicalize(node);
+
+    if (canonicalValue === undefined) {
+        throw new TypeError(`Unsupported JSON value at path "${path}".`);
+    }
+
     claims.push([
-        new TextEncoder().encode(path),
-        new Uint8Array([0x00]),
-        new TextEncoder().encode(canonicalize(node))]);
+        textEncoder.encode(path),
+        EMPTY_CLAIM,
+        textEncoder.encode(canonicalize(canonicalValue))]);
 
     return null;
+}
+
+/**
+ * Escapes a JSON Pointer reference token (RFC 6901).
+ *
+ * @param {string} token
+ * @returns {string}
+ */
+function _escapePointer(token) {
+    return token.replace(/~/g, "~0").replace(/\//g, "~1");
 }

@@ -63,7 +63,11 @@ export class SaltedMerkleTree {
         const { hash, hmac, maxDepth = 8 } = options;
 
         if (typeof hash !== "function" || typeof hmac !== "function") {
-            throw new Error("Both hash and hmac functions must be provided in options.");
+            throw new TypeError("Both hash and hmac functions must be provided in options.");
+        }
+
+        if (typeof maxDepth !== "number" || maxDepth < 1 || maxDepth > 32) {
+            throw new Error("maxDepth must be a number between 1 and 32.");
         }
 
         this.hash = hash;
@@ -82,14 +86,16 @@ export class SaltedMerkleTree {
      */
     async generateRoot(hmacKey, claims) {
 
+        if (claims.length === 0) {
+            throw new Error("Claims array cannot be empty.");
+        }
+
         if (claims.length > this.maxLeaves) {
             throw new Error(`Claims exceed the maximum allowed number of leaves (${this.maxLeaves}).`);
         }
 
         const salts = await this._salts(hmacKey, claims.length);
-
         const mapping = this._mapping(salts);
-
         const leaves = this._leaves(claims, salts, mapping);
 
         return this._generateRoot(hmacKey, leaves);
@@ -106,14 +112,16 @@ export class SaltedMerkleTree {
      */
     async generatePath(hmacKey, claims, disclosed) {
 
+        if (claims.length === 0) {
+            throw new Error("Claims array cannot be empty.");
+        }
+
         if (claims.length > this.maxLeaves) {
             throw new Error(`Claims exceed the maximum allowed number of leaves (${this.maxLeaves}).`);
         }
 
         const salts = await this._salts(hmacKey, claims.length);
-
         const mapping = this._mapping(salts);
-
         const leaves = this._leaves(claims, salts, mapping, disclosed);
 
         const path = this._generatePath(hmacKey, leaves);
@@ -148,6 +156,10 @@ export class SaltedMerkleTree {
      */
     async recreateRoot(claims, salts, indices, path) {
 
+        if (claims.length === 0) {
+            throw new Error("Claims array cannot be empty.");
+        }
+
         if (claims.length > this.maxLeaves) {
             throw new Error(`Claims exceed the maximum allowed number of leaves (${this.maxLeaves}).`);
         }
@@ -176,7 +188,11 @@ export class SaltedMerkleTree {
         for (let leafIndex = 0; leafIndex < levelSize; leafIndex++) {
             const claimIndex = mapping[leafIndex];  // claim index in the disclosed dataset
 
-            if (indices[claimIndex] > this.maxLeaves) {
+            if (indices[claimIndex] < 0) {
+                throw new Error(`Invalid negative leaf index (${indices[claimIndex]})`);
+            }
+
+            if (indices[claimIndex] >= this.maxLeaves) {
                 throw new Error(`Leaf index (${indices[claimIndex]}) exceeds maximum allowed index (${this.maxLeaves - 1}).`);
             }
 
