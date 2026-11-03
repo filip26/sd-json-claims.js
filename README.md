@@ -199,5 +199,7 @@ const importedKey = await crypto.subtle.importKey(
 
 ```
 
+## Interoperability
 
+* [Iron SD JSON Claims for Java](https://github.com/filip26/iron-verifiable-credentials/tree/main/selective-disclosure/salted-merkle-tree)
 
